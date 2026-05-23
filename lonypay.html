@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LONYPAY — Paiement Scolaire Digital Guinée</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap');
+  :root {
+    --blue: #1565C0; --blue-mid: #1E88E5; --blue-light: #42A5F5;
+    --blue-xlight: #E3F2FD; --gold: #F5A623; --gold-light: #FFF8E8;
+    --green: #2E7D32; --green-light: #E8F5E9; --red: #C62828;
+    --white: #FFFFFF; --off: #F8FAFF; --gray: #6B7A99; --dark: #0D1B3E;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: radial-gradient(ellipse at 30% 20%, #0D2A6B 0%, #050F2A 60%, #020508 100%);
+    min-height: 100vh; display: flex; align-items: center;
+    justify-content: center; padding: 20px;
+  }
+  .label { position:fixed; top:14px; left:50%; transform:translateX(-50%); color:rgba(255,255,255,0.2); font-size:10px; letter-spacing:4px; text-transform:uppercase; }
+  .phone { width:375px; height:760px; background:var(--off); border-radius:50px; overflow:hidden; box-shadow:0 50px 120px rgba(0,0,0,0.8), 0 0 0 1px rgba(255,255,255,0.06); position:relative; border:8px solid #0A0A0A; }
+  .notch { position:absolute; top:0; left:50%; transform:translateX(-50%); width:120px; height:28px; background:#0A0A0A; border-radius:0 0 20px 20px; z-index:200; }
+  .screen { height:100%; overflow:hidden; padding-top:28px; position:relative; }
+  .page { height:100%; display:none; flex-direction:column; overflow:hidden; }
+  .page.active { display:flex; }
+  .scroll { flex:1; overflow-y:auto; padding-bottom:80px; }
+  .scroll::-webkit-scrollbar { display:none; }
+  .navbar { position:absolute; bottom:0; left:0; right:0; background:rgba(255,255,255,0.98); backdrop-filter:blur(20px); border-top:1px solid rgba(0,0,0,0.06); display:flex; justify-content:space-around; padding:10px 0 16px; z-index:50; }
+  .nav-item { display:flex; flex-direction:column; align-items:center; gap:3px; cursor:pointer; opacity:0.35; padding:4px 12px; transition:opacity 0.2s; }
+  .nav-item.active { opacity:1; }
+  .nav-icon { font-size:22px; }
+  .nav-label { font-size:9px; font-weight:700; color:var(--blue); letter-spacing:0.5px; text-transform:uppercase; }
+  .btn-main { background:linear-gradient(135deg,var(--blue),var(--blue-mid)); color:white; border:none; border-radius:16px; padding:16px; font-size:15px; font-weight:700; cursor:pointer; width:100%; font-family:'Syne',sans-serif; box-shadow:0 8px 24px rgba(21,101,192,0.35); }
+  .btn-gold { background:linear-gradient(135deg,var(--gold),#E8960A); color:white; border:none; border-radius:16px; padding:16px; font-size:15px; font-weight:700; cursor:pointer; width:100%; font-family:'Syne',sans-serif; box-shadow:0 8px 24px rgba(245,166,35,0.35); }
+  .back-btn { background:rgba(255,255,255,0.15); border:none; border-radius:12px; padding:9px 14px; color:white; cursor:pointer; font-size:17px; }
+  .card { background:white; border-radius:20px; box-shadow:0 2px 16px rgba(0,0,0,0.06); overflow:hidden; }
+  .tag { display:inline-block; font-size:11px; font-weight:700; padding:4px 12px; border-radius:50px; }
+  .tag-blue { background:var(--blue-xlight); color:var(--blue); }
+  .tag-gold { background:var(--gold-light); color:var(--gold); }
+  .tag-green { background:var(--green-light); color:var(--green); }
+  .input-wrap { position:relative; }
+  .input-icon { position:absolute; left:14px; top:50%; transform:translateY(-50%); font-size:18px; }
+  .input-field { width:100%; padding:14px 14px 14px 44px; border:2px solid #E0E8F5; border-radius:14px; font-size:14px; outline:none; background:var(--off); font-family:'DM Sans',sans-serif; }
+  @keyframes pulse { 0%,100%{transform:scale(1);}50%{transform:scale(1.05);} }
+  @keyframes fadeUp { from{opacity:0;transform:translateY(16px);}to{opacity:1;transform:translateY(0);} }
+  .pulse { animation:pulse 2s ease infinite; }
+  .badge { position:absolute; top:-4px; right:-4px; width:18px; height:18px; border-radius:50%; background:var(--red); color:white; font-size:10px; font-weight:800; display:flex; align-items:center; justify-content:center; border:2px solid white; }
+</style>
+</head>
+<body>
+<div class="label">LONYPAY · Prototype</div>
+<div class="phone">
+  <div class="notch"></div>
+  <div class="screen">
+
+    <!-- SPLASH -->
+    <div id="page-splash" class="page active" style="background:radial-gradient(ellipse at 30% 20%,#1A3A8A,#0A1A50 50%,#050A20 100%);align-items:center;justify-content:center;position:relative;overflow:hidden;">
+      <div style="position:absolute;width:380px;height:380px;border-radius:50%;border:1px solid rgba(66,165,245,0.08);top:50%;left:50%;transform:translate(-50%,-50%);"></div>
+      <div style="position:absolute;width:260px;height:260px;border-radius:50%;border:1px solid rgba(66,165,245,0.12);top:50%;left:50%;transform:translate(-50%,-50%);"></div>
+      <div style="text-align:center;z-index:1;padding:0 32px;">
+        <div style="width:100px;height:100px;border-radius:28px;background:linear-gradient(135deg,var(--blue),var(--blue-mid));display:flex;align-items:center;justify-content:center;margin:0 auto 24px;box-shadow:0 20px 60px rgba(21,101,192,0.5);" class="pulse"><span style="font-size:50px;">🎓</span></div>
+        <div style="font-family:'Syne',sans-serif;font-size:56px;font-weight:800;color:white;letter-spacing:-3px;">LONY<span style="color:var(--gold);">PAY</span></div>
+        <div style="color:rgba(255,255,255,0.55);font-size:14px;margin-top:8px;">La finance digitale au service de l'éducation</div>
+        <div style="display:flex;justify-content:center;gap:16px;margin-top:14px;">
+          <div style="color:rgba(255,255,255,0.45);font-size:10px;letter-spacing:2px;">🏫 ÉCOLES</div>
+          <div style="color:rgba(255,255,255,0.2);">·</div>
+          <div style="color:rgba(255,255,255,0.45);font-size:10px;letter-spacing:2px;">👨‍🏫 PROFS</div>
+          <div style="color:rgba(255,255,255,0.2);">·</div>
+          <div style="color:rgba(255,255,255,0.45);font-size:10px;letter-spacing:2px;">👨‍👩‍👧 PARENTS</div>
+        </div>
+        <div style="margin-top:52px;display:flex;flex-direction:column;gap:12px;">
+          <button class="btn-main" onclick="goTo('login')" style="font-size:16px;padding:18px;">Commencer →</button>
+          <button style="background:rgba(255,255,255,0.1);color:white;border:1.5px solid rgba(255,255,255,0.25);border-radius:16px;padding:16px;font-size:15px;font-weight:600;cursor:pointer;" onclick="goTo('home')">Voir la démo</button>
+        </div>
+        <div style="margin-top:28px;color:rgba(255,255,255,0.2);font-size:11px;letter-spacing:2px;">CONAKRY · GUINÉE · 224</div>
+      </div>
+    </div>
+
+    <!-- LOGIN -->
+    <div id="page-login" class="page" style="background:var(--off);">
+      <div style="background:linear-gradient(160deg,var(--dark),var(--blue));padding:40px 24px 36px;border-radius:0 0 32px 32px;">
+        <div style="font-family:'Syne',sans-serif;font-size:32px;font-weight:800;color:white;">LONY<span style="color:var(--gold);">PAY</span></div>
+        <div style="color:rgba(255,255,255,0.65);font-size:14px;margin-top:4px;">Paiement scolaire sécurisé 🎓</div>
+      </div>
+      <div class="scroll" style="padding:24px;">
+        <div class="card" style="padding:24px;margin-bottom:14px;">
+          <div style="font-family:'Syne',sans-serif;font-size:22px;font-weight:800;margin-bottom:4px;">Connexion</div>
+          <div style="color:var(--gray);font-size:13px;margin-bottom:22px;">Choisissez votre profil</div>
+          <div style="display:flex;gap:8px;margin-bottom:18px;" id="profil-btns">
+            <div onclick="selectProfil(this)" style="flex:1;padding:10px 4px;text-align:center;border-radius:12px;cursor:pointer;font-size:11px;font-weight:700;background:var(--blue);color:white;border:2px solid var(--blue);">👨‍👩‍👧 Parent</div>
+            <div onclick="selectProfil(this)" style="flex:1;padding:10px 4px;text-align:center;border-radius:12px;cursor:pointer;font-size:11px;font-weight:700;background:white;color:var(--gray);border:2px solid #E0E8F5;">🏫 École</div>
+            <div onclick="selectProfil(this)" style="flex:1;padding:10px 4px;text-align:center;border-radius:12px;cursor:pointer;font-size:11px;font-weight:700;background:white;color:var(--gray);border:2px solid #E0E8F5;">👨‍🏫 Enseignant</div>
+          </div>
+          <div style="margin-bottom:14px;">
+            <div style="font-size:11px;font-weight:700;color:var(--gray);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;">Nom complet</div>
+            <div class="input-wrap"><span class="input-icon">👤</span><input class="input-field" value="Mohamed Ahmed Camara"></div>
+          </div>
+          <div style="margin-bottom:20px;">
+            <div style="font-size:11px;font-weight:700;color:var(--gray);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;">Téléphone Orange Money</div>
+            <div class="input-wrap"><span class="input-icon">📱</span><input class="input-field" value="+224 623 887 532"></div>
+          </div>
+          <button class="btn-main" onclick="goTo('home')">Se connecter 🟠 Orange Money</button>
+        </div>
+        <div style="background:var(--blue-xlight);border-radius:16px;padding:14px;border:1px solid rgba(21,101,192,0.15);">
+          <div style="font-size:13px;color:var(--blue);font-weight:700;">🔒 100% Sécurisé — Conforme BCRG</div>
+          <div style="font-size:12px;color:var(--gray);margin-top:4px;">Reçus PDF infalsifiables avec QR Code unique</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- HOME -->
+    <div id="page-home" class="page" style="background:var(--off);">
+      <div style="background:linear-gradient(160deg,var(--dark) 0%,var(--blue) 100%);padding:22px 20px 32px;border-radius:0 0 28px 28px;position:relative;overflow:hidden;">
+        <div style="position:absolute;right:-40px;top:-40px;width:180px;height:180px;border-radius:50%;background:rgba(255,255,255,0.04);"></div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;">
+          <div>
+            <div style="color:rgba(255,255,255,0.6);font-size:13px;">Bonjour 👋</div>
+            <div style="color:white;font-size:19px;font-weight:700;font-family:'Syne',sans-serif;">Mohamed Camara</div>
+          </div>
+          <div style="display:flex;gap:10px;">
+            <div style="position:relative;cursor:pointer;" onclick="goTo('paiements')">
+              <div style="width:40px;height:40px;border-radius:14px;background:rgba(255,255,255,0.15);display:flex;align-items:center;justify-content:center;font-size:20px;">🔔</div>
+              <div class="badge">2</div>
+            </div>
+            <div onclick="goTo('profil')" style="width:40px;height:40px;border-radius:14px;background:rgba(255,255,255,0.15);display:flex;align-items:center;justify-content:center;font-size:20px;cursor:pointer;">👤</div>
+          </div>
+        </div>
+        <!-- Solde card -->
+        <div style="background:rgba(255,255,255,0.1);border-radius:18px;padding:16px;backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,0.15);">
+          <div style="color:rgba(255,255,255,0.65);font-size:12px;margin-bottom:4px;">Mes enfants inscrits</div>
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <div style="color:white;font-family:'Syne',sans-serif;font-size:22px;font-weight:800;">2 enfants</div>
+            <div style="background:rgba(255,255,255,0.15);padding:6px 14px;border-radius:50px;color:rgba(255,255,255,0.9);font-size:12px;font-weight:700;">✅ À jour</div>
+          </div>
+          <div style="display:flex;gap:16px;margin-top:10px;font-size:12px;color:rgba(255,255,255,0.7);">
+            <span>🏫 École Ratoma A</span>
+            <span>·</span>
+            <span>📚 CM2 & 6ème</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="scroll" style="padding:16px;">
+        <!-- Actions rapides -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:18px;">
+          <div onclick="goTo('payer')" style="background:linear-gradient(135deg,var(--blue),var(--blue-mid));border-radius:18px;padding:16px;cursor:pointer;position:relative;overflow:hidden;">
+            <div style="position:absolute;right:-10px;bottom:-10px;font-size:50px;opacity:0.2;">💳</div>
+            <div style="font-size:28px;margin-bottom:8px;">💳</div>
+            <div style="color:white;font-weight:800;font-size:14px;font-family:'Syne',sans-serif;">Payer frais</div>
+            <div style="color:rgba(255,255,255,0.7);font-size:11px;margin-top:2px;">Scolarité & Autres</div>
+          </div>
+          <div onclick="goTo('recu')" style="background:linear-gradient(135deg,var(--gold),#E8960A);border-radius:18px;padding:16px;cursor:pointer;position:relative;overflow:hidden;">
+            <div style="position:absolute;right:-10px;bottom:-10px;font-size:50px;opacity:0.2;">🧾</div>
+            <div style="font-size:28px;margin-bottom:8px;">🧾</div>
+            <div style="color:white;font-weight:800;font-size:14px;font-family:'Syne',sans-serif;">Mes reçus</div>
+            <div style="color:rgba(255,255,255,0.7);font-size:11px;margin-top:2px;">PDF & QR Code</div>
+          </div>
+          <div onclick="goTo('marketplace')" style="background:linear-gradient(135deg,#1B5E20,#2E7D32);border-radius:18px;padding:16px;cursor:pointer;position:relative;overflow:hidden;">
+            <div style="position:absolute;right:-10px;bottom:-10px;font-size:50px;opacity:0.2;">🛍️</div>
+            <div style="font-size:28px;margin-bottom:8px;">🛍️</div>
+            <div style="color:white;font-weight:800;font-size:14px;font-family:'Syne',sans-serif;">Marketplace</div>
+            <div style="color:rgba(255,255,255,0.7);font-size:11px;margin-top:2px;">Kits & Uniformes</div>
+          </div>
+          <div onclick="goTo('suivi')" style="background:linear-gradient(135deg,#4A148C,#7B1FA2);border-radius:18px;padding:16px;cursor:pointer;position:relative;overflow:hidden;">
+            <div style="position:absolute;right:-10px;bottom:-10px;font-size:50px;opacity:0.2;">📊</div>
+            <div style="font-size:28px;margin-bottom:8px;">📊</div>
+            <div style="color:white;font-weight:800;font-size:14px;font-family:'Syne',sans-serif;">Suivi scolaire</div>
+            <div style="color:rgba(255,255,255,0.7);font-size:11px;margin-top:2px;">Notes & Absences</div>
+          </div>
+        </div>
+
+        <!-- Alerte paiement -->
+        <div onclick="goTo('payer')" style="background:linear-gradient(135deg,#7B1800,#C62828);border-radius:18px;padding:16px;margin-bottom:16px;cursor:pointer;display:flex;align-items:center;gap:14px;">
+          <div style="font-size:32px;">⚠️</div>
+          <div style="flex:1;">
+            <div style="color:white;font-weight:800;font-size:14px;">Frais du 2ème trimestre</div>
+            <div style="color:rgba(255,255,255,0.7);font-size:12px;margin-top:2px;">Échéance : 15 janvier 2026 · 450 000 GNF</div>
+          </div>
+          <div style="color:white;font-size:18px;">›</div>
+        </div>
+
+        <!-- Derniers paiements -->
+        <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:15px;color:var(--dark);margin-bottom:12px;">Derniers paiements</div>
+        <div style="display:flex;flex-direction:column;gap:8px;">
+          <div class="card" style="padding:14px;display:flex;align-items:center;gap:12px;">
+            <div style="width:44px;height:44px;border-radius:12px;background:var(--blue-xlight);display:flex;align-items:center;justify-content:center;font-size:22px;">✅</div>
+            <div style="flex:1;"><div style="font-weight:700;font-size:13px;">Frais 1er trimestre — Aminata</div><div style="font-size:11px;color:var(--gray);">École Ratoma A · 12 Oct 2025</div></div>
+            <div style="font-weight:800;font-size:13px;color:var(--blue);">450 000 GNF</div>
+          </div>
+          <div class="card" style="padding:14px;display:flex;align-items:center;gap:12px;">
+            <div style="width:44px;height:44px;border-radius:12px;background:var(--blue-xlight);display:flex;align-items:center;justify-content:center;font-size:22px;">✅</div>
+            <div style="flex:1;"><div style="font-weight:700;font-size:13px;">Frais 1er trimestre — Ibrahima</div><div style="font-size:11px;color:var(--gray);">Collège Dixinn · 12 Oct 2025</div></div>
+            <div style="font-weight:800;font-size:13px;color:var(--blue);">600 000 GNF</div>
+          </div>
+          <div class="card" style="padding:14px;display:flex;align-items:center;gap:12px;">
+            <div style="width:44px;height:44px;border-radius:12px;background:var(--gold-light);display:flex;align-items:center;justify-content:center;font-size:22px;">🛍️</div>
+            <div style="flex:1;"><div style="font-weight:700;font-size:13px;">Kit scolaire — Marketplace</div><div style="font-size:11px;color:var(--gray);">Livraison école · 5 Oct 2025</div></div>
+            <div style="font-weight:800;font-size:13px;color:var(--gold);">85 000 GNF</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="navbar">
+        <div class="nav-item active" onclick="goTo('home')"><span class="nav-icon">🏠</span><span class="nav-label">Accueil</span></div>
+        <div class="nav-item" onclick="goTo('payer')"><span class="nav-icon">💳</span><span class="nav-label">Payer</span></div>
+        <div class="nav-item" onclick="goTo('marketplace')"><span class="nav-icon">🛍️</span><span class="nav-label">Boutique</span></div>
+        <div class="nav-item" onclick="goTo('profil')"><span class="nav-icon">👤</span><span class="nav-label">Profil</span></div>
+      </div>
+    </div>
+
+    <!-- PAYER -->
+    <div id="page-payer" class="page" style="background:var(--off);">
+      <div style="background:linear-gradient(135deg,var(--dark),var(--blue));padding:20px;display:flex;align-items:center;gap:12px;border-radius:0 0 24px 24px;">
+        <button class="back-btn" onclick="goTo('home')">←</button>
+        <div><div style="color:white;font-weight:800;font-size:18px;font-family:'Syne',sans-serif;">💳 Payer les frais scolaires</div><div style="color:rgba(255,255,255,0.65);font-size:12px;">Paiement sécurisé via Orange Money</div></div>
+      </div>
+      <div class="scroll" style="padding:20px;">
+        <!-- Choix enfant -->
+        <div class="card" style="padding:18px;margin-bottom:14px;">
+          <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:15px;margin-bottom:14px;">Quel enfant ?</div>
+          <div style="display:flex;flex-direction:column;gap:10px;">
+            <div id="enfant-1" onclick="selectEnfant(1)" style="padding:14px;border:2px solid var(--blue);border-radius:14px;cursor:pointer;background:var(--blue-xlight);">
+              <div style="display:flex;justify-content:space-between;align-items:center;">
+                <div><div style="font-weight:700;font-size:14px;">👧 Aminata Camara</div><div style="font-size:12px;color:var(--gray);">CM2 · École Ratoma A</div></div>
+                <div style="color:var(--blue);font-weight:800;">✓</div>
+              </div>
+            </div>
+            <div id="enfant-2" onclick="selectEnfant(2)" style="padding:14px;border:2px solid #E0E8F5;border-radius:14px;cursor:pointer;background:white;">
+              <div style="display:flex;justify-content:space-between;align-items:center;">
+                <div><div style="font-weight:700;font-size:14px;">👦 Ibrahima Camara</div><div style="font-size:12px;color:var(--gray);">6ème · Collège Dixinn</div></div>
+                <div style="color:var(--gray);">›</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Frais à payer -->
+        <div class="card" style="padding:18px;margin-bottom:14px;">
+          <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:15px;margin-bottom:14px;">Frais à payer — 2ème trimestre</div>
+          <div style="display:flex;flex-direction:column;gap:8px;">
+            <div style="display:flex;justify-content:space-between;padding:10px;background:var(--off);border-radius:12px;">
+              <div><div style="font-weight:600;font-size:13px;">Frais de scolarité</div><div style="font-size:11px;color:var(--gray);">Trimestre 2 · Obligatoire</div></div>
+              <div style="font-weight:800;font-size:14px;color:var(--dark);">350 000 GNF</div>
+            </div>
+            <div style="display:flex;justify-content:space-between;padding:10px;background:var(--off);border-radius:12px;">
+              <div><div style="font-weight:600;font-size:13px;">Frais de transport</div><div style="font-size:11px;color:var(--gray);">Bus scolaire · Optionnel</div></div>
+              <div style="font-weight:800;font-size:14px;color:var(--dark);">80 000 GNF</div>
+            </div>
+            <div style="display:flex;justify-content:space-between;padding:10px;background:var(--off);border-radius:12px;">
+              <div><div style="font-weight:600;font-size:13px;">Frais de cantine</div><div style="font-size:11px;color:var(--gray);">Repas scolaires · Optionnel</div></div>
+              <div style="font-weight:800;font-size:14px;color:var(--dark);">20 000 GNF</div>
+            </div>
+          </div>
+          <div style="height:1px;background:#E0E8F5;margin:12px 0;"></div>
+          <div style="display:flex;justify-content:space-between;font-size:16px;font-weight:900;color:var(--blue);">
+            <span>TOTAL</span><span>450 000 GNF</span>
+          </div>
+        </div>
+
+        <!-- Paiement -->
+        <div class="card" style="padding:18px;margin-bottom:14px;">
+          <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:15px;margin-bottom:12px;">Mode de paiement</div>
+          <div style="padding:14px;border:2px solid var(--blue);border-radius:14px;display:flex;align-items:center;gap:12px;background:var(--blue-xlight);margin-bottom:8px;">
+            <span style="font-size:28px;">🟠</span>
+            <div style="flex:1;"><div style="font-weight:700;">Orange Money</div><div style="font-size:12px;color:var(--gray);">+224 623 887 532</div></div>
+            <div style="color:var(--blue);font-weight:800;">✓</div>
+          </div>
+          <div style="padding:14px;border:2px solid #E0E8F5;border-radius:14px;display:flex;align-items:center;gap:12px;">
+            <span style="font-size:28px;">🟡</span>
+            <div style="flex:1;"><div style="font-weight:700;">MTN MoMo</div><div style="font-size:12px;color:var(--gray);">Autre numéro</div></div>
+          </div>
+        </div>
+
+        <button class="btn-main" onclick="goTo('recu')">Payer 450 000 GNF → Reçu PDF ✅</button>
+      </div>
+    </div>
+
+    <!-- RECU -->
+    <div id="page-recu" class="page" style="background:var(--off);">
+      <div style="background:linear-gradient(135deg,var(--dark),var(--blue));padding:20px;display:flex;align-items:center;gap:12px;border-radius:0 0 24px 24px;">
+        <button class="back-btn" onclick="goTo('home')">←</button>
+        <div><div style="color:white;font-weight:800;font-size:18px;font-family:'Syne',sans-serif;">🧾 Reçu officiel</div><div style="color:rgba(255,255,255,0.65);font-size:12px;">PDF infalsifiable avec QR Code</div></div>
+      </div>
+      <div class="scroll" style="padding:20px;">
+        <!-- Reçu simulé -->
+        <div style="background:white;border-radius:20px;padding:20px;margin-bottom:14px;border:2px solid var(--blue-xlight);box-shadow:0 4px 20px rgba(21,101,192,0.1);">
+          <div style="text-align:center;margin-bottom:16px;">
+            <div style="font-family:'Syne',sans-serif;font-size:22px;font-weight:800;color:var(--blue);">LONY<span style="color:var(--gold);">PAY</span></div>
+            <div style="font-size:11px;color:var(--gray);margin-top:2px;letter-spacing:1px;">REÇU OFFICIEL DE PAIEMENT</div>
+            <div style="margin:12px auto;width:80px;height:80px;background:linear-gradient(135deg,var(--dark),var(--blue));border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:36px;">📱</div>
+            <div style="font-size:10px;color:var(--gray);">QR Code unique — Scannable à l'entrée</div>
+          </div>
+          <div style="height:1px;background:#E0E8F5;margin:12px 0;"></div>
+          <div style="display:flex;flex-direction:column;gap:8px;">
+            <div style="display:flex;justify-content:space-between;font-size:13px;"><span style="color:var(--gray);">N° Reçu</span><span style="font-weight:700;color:var(--blue);">#LP-2025-004782</span></div>
+            <div style="display:flex;justify-content:space-between;font-size:13px;"><span style="color:var(--gray);">Élève</span><span style="font-weight:700;">Aminata Camara</span></div>
+            <div style="display:flex;justify-content:space-between;font-size:13px;"><span style="color:var(--gray);">École</span><span style="font-weight:700;">École Ratoma A</span></div>
+            <div style="display:flex;justify-content:space-between;font-size:13px;"><span style="color:var(--gray);">Classe</span><span style="font-weight:700;">CM2</span></div>
+            <div style="display:flex;justify-content:space-between;font-size:13px;"><span style="color:var(--gray);">Période</span><span style="font-weight:700;">2ème Trimestre 2025-26</span></div>
+            <div style="display:flex;justify-content:space-between;font-size:13px;"><span style="color:var(--gray);">Date paiement</span><span style="font-weight:700;">12 Jan 2026 · 09:47</span></div>
+            <div style="display:flex;justify-content:space-between;font-size:13px;"><span style="color:var(--gray);">Payé via</span><span style="font-weight:700;">Orange Money 🟠</span></div>
+          </div>
+          <div style="height:1px;background:#E0E8F5;margin:12px 0;"></div>
+          <div style="display:flex;justify-content:space-between;font-size:18px;font-weight:900;color:var(--blue);">
+            <span>TOTAL PAYÉ</span><span>450 000 GNF</span>
+          </div>
+          <div style="margin-top:12px;background:var(--blue-xlight);border-radius:10px;padding:8px;text-align:center;">
+            <div style="font-size:11px;color:var(--blue);font-weight:700;">✅ Paiement vérifié et validé par LONYPAY</div>
+          </div>
+        </div>
+        <div style="display:flex;gap:10px;">
+          <button style="flex:1;background:var(--blue-xlight);color:var(--blue);border:none;border-radius:14px;padding:14px;font-size:13px;font-weight:700;cursor:pointer;">📥 Télécharger PDF</button>
+          <button style="flex:1;background:var(--gold-light);color:var(--gold);border:none;border-radius:14px;padding:14px;font-size:13px;font-weight:700;cursor:pointer;">📤 Partager</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- MARKETPLACE -->
+    <div id="page-marketplace" class="page" style="background:var(--off);">
+      <div style="background:linear-gradient(135deg,#1B5E20,#2E7D32);padding:20px;display:flex;align-items:center;gap:12px;border-radius:0 0 24px 24px;">
+        <button class="back-btn" onclick="goTo('home')">←</button>
+        <div><div style="color:white;font-weight:800;font-size:18px;font-family:'Syne',sans-serif;">🛍️ Marketplace Scolaire</div><div style="color:rgba(255,255,255,0.65);font-size:12px;">Kits · Uniformes · Livres · Fournitures</div></div>
+      </div>
+      <div class="scroll" style="padding:16px;">
+        <div style="display:flex;gap:8px;overflow-x:auto;margin-bottom:16px;padding-bottom:4px;" id="cat-btns">
+          <div onclick="selectCat(this)" style="padding:7px 16px;border-radius:50px;cursor:pointer;white-space:nowrap;font-size:12px;font-weight:700;background:var(--green);color:white;border:none;">Tout</div>
+          <div onclick="selectCat(this)" style="padding:7px 16px;border-radius:50px;cursor:pointer;white-space:nowrap;font-size:12px;font-weight:700;background:white;color:var(--gray);border:1px solid #E0E8F5;">🎒 Kits</div>
+          <div onclick="selectCat(this)" style="padding:7px 16px;border-radius:50px;cursor:pointer;white-space:nowrap;font-size:12px;font-weight:700;background:white;color:var(--gray);border:1px solid #E0E8F5;">👕 Uniformes</div>
+          <div onclick="selectCat(this)" style="padding:7px 16px;border-radius:50px;cursor:pointer;white-space:nowrap;font-size:12px;font-weight:700;background:white;color:var(--gray);border:1px solid #E0E8F5;">📚 Livres</div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+          <div class="card" style="cursor:pointer;" onclick="addPanier(35000,'Kit scolaire complet')">
+            <div style="height:90px;background:linear-gradient(135deg,#E3F2FD,#BBDEFB);display:flex;align-items:center;justify-content:center;font-size:40px;">🎒</div>
+            <div style="padding:12px;">
+              <div style="font-weight:700;font-size:13px;">Kit scolaire CM1-CM2</div>
+              <div style="font-size:11px;color:var(--gray);margin-top:2px;">Cahiers + stylos + règle</div>
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px;">
+                <div style="font-weight:800;font-size:14px;color:var(--blue);">35 000 GNF</div>
+                <button style="background:var(--blue);color:white;border:none;border-radius:8px;padding:4px 10px;font-size:11px;font-weight:700;cursor:pointer;">+ Ajouter</button>
+              </div>
+            </div>
+          </div>
+          <div class="card" style="cursor:pointer;" onclick="addPanier(55000,'Uniforme école')">
+            <div style="height:90px;background:linear-gradient(135deg,#E8F5E9,#C8E6C9);display:flex;align-items:center;justify-content:center;font-size:40px;">👕</div>
+            <div style="padding:12px;">
+              <div style="font-weight:700;font-size:13px;">Uniforme officiel</div>
+              <div style="font-size:11px;color:var(--gray);margin-top:2px;">Chemise + pantalon/jupe</div>
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px;">
+                <div style="font-weight:800;font-size:14px;color:var(--green);">55 000 GNF</div>
+                <button style="background:var(--green);color:white;border:none;border-radius:8px;padding:4px 10px;font-size:11px;font-weight:700;cursor:pointer;">+ Ajouter</button>
+              </div>
+            </div>
+          </div>
+          <div class="card" style="cursor:pointer;" onclick="addPanier(25000,'Manuel mathématiques')">
+            <div style="height:90px;background:linear-gradient(135deg,#FFF8E8,#FFE0B2);display:flex;align-items:center;justify-content:center;font-size:40px;">📚</div>
+            <div style="padding:12px;">
+              <div style="font-weight:700;font-size:13px;">Manuel Mathématiques</div>
+              <div style="font-size:11px;color:var(--gray);margin-top:2px;">CM2 · Programme guinéen</div>
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px;">
+                <div style="font-weight:800;font-size:14px;color:var(--gold);">25 000 GNF</div>
+                <button style="background:var(--gold);color:white;border:none;border-radius:8px;padding:4px 10px;font-size:11px;font-weight:700;cursor:pointer;">+ Ajouter</button>
+              </div>
+            </div>
+          </div>
+          <div class="card" style="cursor:pointer;" onclick="addPanier(18000,'Cahiers x10')">
+            <div style="height:90px;background:linear-gradient(135deg,#F3E5F5,#E1BEE7);display:flex;align-items:center;justify-content:center;font-size:40px;">📓</div>
+            <div style="padding:12px;">
+              <div style="font-weight:700;font-size:13px;">Pack Cahiers × 10</div>
+              <div style="font-size:11px;color:var(--gray);margin-top:2px;">100 pages · Grands carreaux</div>
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px;">
+                <div style="font-weight:800;font-size:14px;color:#7B1FA2;">18 000 GNF</div>
+                <button style="background:#7B1FA2;color:white;border:none;border-radius:8px;padding:4px 10px;font-size:11px;font-weight:700;cursor:pointer;">+ Ajouter</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Panier -->
+        <div id="panier-section" style="display:none;margin-top:16px;">
+          <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:15px;margin-bottom:10px;">🛒 Mon panier</div>
+          <div class="card" style="padding:16px;">
+            <div id="panier-items"></div>
+            <div style="height:1px;background:#E0E8F5;margin:10px 0;"></div>
+            <div style="display:flex;justify-content:space-between;font-weight:800;font-size:15px;color:var(--blue);">
+              <span>Total</span><span id="panier-total">0 GNF</span>
+            </div>
+          </div>
+          <button class="btn-gold" style="margin-top:10px;" onclick="goTo('home')">Commander → Livraison à l'école 📦</button>
+        </div>
+      </div>
+
+      <div class="navbar">
+        <div class="nav-item" onclick="goTo('home')"><span class="nav-icon">🏠</span><span class="nav-label">Accueil</span></div>
+        <div class="nav-item" onclick="goTo('payer')"><span class="nav-icon">💳</span><span class="nav-label">Payer</span></div>
+        <div class="nav-item active" onclick="goTo('marketplace')"><span class="nav-icon">🛍️</span><span class="nav-label">Boutique</span></div>
+        <div class="nav-item" onclick="goTo('profil')"><span class="nav-icon">👤</span><span class="nav-label">Profil</span></div>
+      </div>
+    </div>
+
+    <!-- SUIVI -->
+    <div id="page-suivi" class="page" style="background:var(--off);">
+      <div style="background:linear-gradient(135deg,#4A148C,#7B1FA2);padding:20px;display:flex;align-items:center;gap:12px;border-radius:0 0 24px 24px;">
+        <button class="back-btn" onclick="goTo('home')">←</button>
+        <div><div style="color:white;font-weight:800;font-size:18px;font-family:'Syne',sans-serif;">📊 Suivi scolaire</div><div style="color:rgba(255,255,255,0.65);font-size:12px;">Notes · Absences · Résultats</div></div>
+      </div>
+      <div class="scroll" style="padding:16px;">
+        <div style="display:flex;gap:8px;margin-bottom:14px;">
+          <div style="flex:1;padding:10px;text-align:center;border-radius:12px;cursor:pointer;font-size:12px;font-weight:700;border:2px solid #4A148C;background:#F3E5F5;color:#4A148C;">👧 Aminata</div>
+          <div style="flex:1;padding:10px;text-align:center;border-radius:12px;cursor:pointer;font-size:12px;font-weight:700;border:2px solid #E0E8F5;background:white;color:var(--gray);">👦 Ibrahima</div>
+        </div>
+        <div class="card" style="padding:16px;margin-bottom:12px;">
+          <div style="font-weight:800;font-size:14px;margin-bottom:12px;">📝 Notes — 1er trimestre</div>
+          <div style="display:flex;flex-direction:column;gap:8px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;padding:8px;background:var(--blue-xlight);border-radius:10px;">
+              <span style="font-size:13px;font-weight:600;">Mathématiques</span>
+              <span style="font-weight:800;font-size:14px;color:var(--blue);">17/20</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;align-items:center;padding:8px;background:#E8F5E9;border-radius:10px;">
+              <span style="font-size:13px;font-weight:600;">Français</span>
+              <span style="font-weight:800;font-size:14px;color:var(--green);">15/20</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;align-items:center;padding:8px;background:var(--gold-light);border-radius:10px;">
+              <span style="font-size:13px;font-weight:600;">Sciences</span>
+              <span style="font-weight:800;font-size:14px;color:var(--gold);">14/20</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;align-items:center;padding:8px;background:#E8F5E9;border-radius:10px;">
+              <span style="font-size:13px;font-weight:600;">Histoire-Géo</span>
+              <span style="font-weight:800;font-size:14px;color:var(--green);">16/20</span>
+            </div>
+          </div>
+          <div style="margin-top:12px;background:var(--blue-xlight);border-radius:10px;padding:10px;display:flex;justify-content:space-between;align-items:center;">
+            <span style="font-weight:700;font-size:13px;">Moyenne générale</span>
+            <span style="font-weight:900;font-size:18px;color:var(--blue);">15.5/20 🏆</span>
+          </div>
+        </div>
+        <div class="card" style="padding:16px;">
+          <div style="font-weight:800;font-size:14px;margin-bottom:12px;">📅 Présences — Janvier 2026</div>
+          <div style="display:flex;gap:10px;">
+            <div style="flex:1;background:var(--blue-xlight);border-radius:14px;padding:14px;text-align:center;">
+              <div style="font-size:28px;font-weight:900;color:var(--blue);">18</div>
+              <div style="font-size:11px;color:var(--gray);">Jours présente</div>
+            </div>
+            <div style="flex:1;background:#FFEBEE;border-radius:14px;padding:14px;text-align:center;">
+              <div style="font-size:28px;font-weight:900;color:var(--red);">0</div>
+              <div style="font-size:11px;color:var(--gray);">Absences</div>
+            </div>
+            <div style="flex:1;background:var(--green-light);border-radius:14px;padding:14px;text-align:center;">
+              <div style="font-size:28px;font-weight:900;color:var(--green);">1</div>
+              <div style="font-size:11px;color:var(--gray);">Retards</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PAIEMENTS -->
+    <div id="page-paiements" class="page" style="background:var(--off);">
+      <div style="background:linear-gradient(135deg,var(--dark),var(--blue));padding:20px 20px 28px;border-radius:0 0 24px 24px;">
+        <div style="color:white;font-family:'Syne',sans-serif;font-size:22px;font-weight:800;">Historique</div>
+        <div style="color:rgba(255,255,255,0.6);font-size:13px;margin-top:2px;">Tous vos paiements LONYPAY</div>
+      </div>
+      <div class="scroll" style="padding:16px;">
+        <div style="display:flex;flex-direction:column;gap:8px;">
+          <div class="card" style="padding:14px;border-left:4px solid var(--blue);">
+            <div style="display:flex;justify-content:space-between;align-items:center;"><div style="font-weight:700;font-size:13px;">💳 Frais 2ème trimestre — Aminata</div><div style="font-weight:800;color:var(--blue);">450 000 GNF</div></div>
+            <div style="font-size:11px;color:var(--gray);margin-top:4px;">12 Jan 2026 · Reçu #LP-2025-004782 ✅</div>
+          </div>
+          <div class="card" style="padding:14px;border-left:4px solid var(--blue);">
+            <div style="display:flex;justify-content:space-between;align-items:center;"><div style="font-weight:700;font-size:13px;">💳 Frais 2ème trimestre — Ibrahima</div><div style="font-weight:800;color:var(--blue);">600 000 GNF</div></div>
+            <div style="font-size:11px;color:var(--gray);margin-top:4px;">12 Jan 2026 · Reçu #LP-2025-004783 ✅</div>
+          </div>
+          <div class="card" style="padding:14px;border-left:4px solid var(--gold);">
+            <div style="display:flex;justify-content:space-between;align-items:center;"><div style="font-weight:700;font-size:13px;">🛍️ Kit scolaire — Marketplace</div><div style="font-weight:800;color:var(--gold);">85 000 GNF</div></div>
+            <div style="font-size:11px;color:var(--gray);margin-top:4px;">5 Oct 2025 · Livré à l'école ✅</div>
+          </div>
+          <div class="card" style="padding:14px;border-left:4px solid var(--blue);">
+            <div style="display:flex;justify-content:space-between;align-items:center;"><div style="font-weight:700;font-size:13px;">💳 Frais 1er trimestre — Aminata</div><div style="font-weight:800;color:var(--blue);">450 000 GNF</div></div>
+            <div style="font-size:11px;color:var(--gray);margin-top:4px;">2 Oct 2025 · Reçu #LP-2025-003921 ✅</div>
+          </div>
+          <div class="card" style="padding:14px;border-left:4px solid var(--blue);">
+            <div style="display:flex;justify-content:space-between;align-items:center;"><div style="font-weight:700;font-size:13px;">💳 Frais 1er trimestre — Ibrahima</div><div style="font-weight:800;color:var(--blue);">600 000 GNF</div></div>
+            <div style="font-size:11px;color:var(--gray);margin-top:4px;">2 Oct 2025 · Reçu #LP-2025-003922 ✅</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PROFIL -->
+    <div id="page-profil" class="page" style="background:var(--off);">
+      <div style="background:linear-gradient(160deg,var(--dark),var(--blue));padding:36px 24px 44px;border-radius:0 0 32px 32px;text-align:center;">
+        <div style="width:72px;height:72px;border-radius:50%;background:rgba(255,255,255,0.2);margin:0 auto 12px;display:flex;align-items:center;justify-content:center;font-size:36px;border:3px solid rgba(255,255,255,0.3);">👤</div>
+        <div style="color:white;font-weight:800;font-size:20px;font-family:'Syne',sans-serif;">Mohamed Ahmed Camara</div>
+        <div style="color:rgba(255,255,255,0.6);font-size:13px;margin-top:4px;">+224 623 887 532 · Parent</div>
+        <div style="margin-top:12px;display:inline-block;background:rgba(255,255,255,0.15);color:white;font-size:11px;font-weight:700;padding:5px 16px;border-radius:50px;">🎓 Compte vérifié LONYPAY</div>
+      </div>
+      <div class="scroll" style="padding:16px;">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;">
+          <div class="card" style="padding:14px;text-align:center;"><div style="font-size:22px;font-weight:800;color:var(--blue);font-family:'Syne',sans-serif;">2</div><div style="font-size:11px;color:var(--gray);">Enfants inscrits</div></div>
+          <div class="card" style="padding:14px;text-align:center;"><div style="font-size:22px;font-weight:800;color:var(--gold);font-family:'Syne',sans-serif;">5</div><div style="font-size:11px;color:var(--gray);">Paiements effectués</div></div>
+        </div>
+        <div class="card" style="padding:0;overflow:hidden;">
+          <div onclick="goTo('paiements')" style="display:flex;align-items:center;gap:14px;padding:14px 16px;cursor:pointer;border-bottom:1px solid var(--off);"><span style="font-size:22px;">💳</span><div style="flex:1;font-weight:600;font-size:14px;">Historique paiements</div><span style="color:var(--gray);">5 reçus ›</span></div>
+          <div onclick="goTo('recu')" style="display:flex;align-items:center;gap:14px;padding:14px 16px;cursor:pointer;border-bottom:1px solid var(--off);"><span style="font-size:22px;">🧾</span><div style="flex:1;font-weight:600;font-size:14px;">Mes reçus PDF</div><span style="color:var(--gray);">›</span></div>
+          <div onclick="goTo('suivi')" style="display:flex;align-items:center;gap:14px;padding:14px 16px;cursor:pointer;border-bottom:1px solid var(--off);"><span style="font-size:22px;">📊</span><div style="flex:1;font-weight:600;font-size:14px;">Suivi scolaire</div><span style="color:var(--gray);">›</span></div>
+          <div style="display:flex;align-items:center;gap:14px;padding:14px 16px;cursor:pointer;border-bottom:1px solid var(--off);"><span style="font-size:22px;">🟠</span><div style="flex:1;font-weight:600;font-size:14px;">Orange Money lié</div><span style="color:var(--green);font-size:12px;font-weight:700;">Actif ✓</span></div>
+          <div onclick="goTo('splash')" style="display:flex;align-items:center;gap:14px;padding:14px 16px;cursor:pointer;"><span style="font-size:22px;">🚪</span><div style="flex:1;font-weight:600;font-size:14px;color:var(--red);">Se déconnecter</div></div>
+        </div>
+      </div>
+      <div class="navbar">
+        <div class="nav-item" onclick="goTo('home')"><span class="nav-icon">🏠</span><span class="nav-label">Accueil</span></div>
+        <div class="nav-item" onclick="goTo('payer')"><span class="nav-icon">💳</span><span class="nav-label">Payer</span></div>
+        <div class="nav-item" onclick="goTo('marketplace')"><span class="nav-icon">🛍️</span><span class="nav-label">Boutique</span></div>
+        <div class="nav-item active" onclick="goTo('profil')"><span class="nav-icon">👤</span><span class="nav-label">Profil</span></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+function goTo(p) {
+  document.querySelectorAll('.page').forEach(x => x.classList.remove('active'));
+  document.getElementById('page-'+p).classList.add('active');
+}
+function selectProfil(el) {
+  document.querySelectorAll('#profil-btns div').forEach(b => { b.style.background='white'; b.style.color='var(--gray)'; b.style.borderColor='#E0E8F5'; });
+  el.style.background='var(--blue)'; el.style.color='white'; el.style.borderColor='var(--blue)';
+}
+function selectEnfant(n) {
+  document.getElementById('enfant-1').style.borderColor = n===1 ? 'var(--blue)' : '#E0E8F5';
+  document.getElementById('enfant-1').style.background = n===1 ? 'var(--blue-xlight)' : 'white';
+  document.getElementById('enfant-2').style.borderColor = n===2 ? 'var(--blue)' : '#E0E8F5';
+  document.getElementById('enfant-2').style.background = n===2 ? 'var(--blue-xlight)' : 'white';
+}
+function selectCat(el) {
+  document.querySelectorAll('#cat-btns div').forEach(b => { b.style.background='white'; b.style.color='var(--gray)'; b.style.border='1px solid #E0E8F5'; });
+  el.style.background='var(--green)'; el.style.color='white'; el.style.border='none';
+}
+let panier = {};
+function addPanier(prix, nom) {
+  panier[nom] = (panier[nom] || 0) + 1;
+  renderPanier();
+}
+function renderPanier() {
+  const sec = document.getElementById('panier-section');
+  const items = document.getElementById('panier-items');
+  const total = document.getElementById('panier-total');
+  let t = 0, html = '';
+  const prix = {'Kit scolaire complet':35000,'Uniforme école':55000,'Manuel mathématiques':25000,'Cahiers x10':18000};
+  Object.entries(panier).forEach(([nom, qty]) => {
+    const p = prix[nom] || 0;
+    t += p * qty;
+    html += `<div style="display:flex;justify-content:space-between;font-size:13px;padding:4px 0;"><span>${nom} ×${qty}</span><span style="font-weight:700;">${(p*qty).toLocaleString()} GNF</span></div>`;
+  });
+  if(Object.keys(panier).length > 0) { sec.style.display='block'; items.innerHTML=html; total.textContent=t.toLocaleString()+' GNF'; }
+}
+</script>
+</body>
+</html>
